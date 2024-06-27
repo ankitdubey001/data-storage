@@ -2,6 +2,7 @@ import streamlit as st
 from pathlib import Path
 import os
 import hashlib
+import base64
 
 # File to store user credentials
 USERS_FILE = "users.txt"
@@ -116,7 +117,22 @@ def share_file(file_path):
 
         # Creating a download link for sharing
         b64 = base64.b64encode(file_data).decode('utf-8')
-        href = f'<a href="data:file/{file_path.suffix[1:]};base64,{b64}" download="{file_path.name}">Download {file_path.name}</a>'
+        mime_type = "application/octet-stream"  # Default MIME type
+        file_extension = file_path.suffix.lower()
+        
+        # Set the correct MIME type based on file extension
+        if file_extension in ['.jpg', '.jpeg', '.png', '.gif']:
+            mime_type = f"image/{file_extension[1:]}"
+        elif file_extension in ['.mp4', '.mov', '.avi']:
+            mime_type = f"video/{file_extension[1:]}"
+        elif file_extension in ['.mp3', '.wav', '.ogg']:
+            mime_type = f"audio/{file_extension[1:]}"
+        elif file_extension == '.pdf':
+            mime_type = "application/pdf"
+        else:
+            mime_type = "application/octet-stream"
+
+        href = f'<a href="data:{mime_type};base64,{b64}" download="{file_path.name}">Download {file_path.name}</a>'
         st.markdown(href, unsafe_allow_html=True)
     except Exception as e:
         st.error(f"Error sharing file: {e}")
