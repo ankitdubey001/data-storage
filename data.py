@@ -132,7 +132,7 @@ def display_uploaded_file(file_path):
             pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="1000" type="application/pdf"></iframe>'
             st.markdown(pdf_display, unsafe_allow_html=True)
         else:
-            st.text_area(f"File: {file_path.name}", file_data.decode())
+            st.write(f"File: {file_path.name}")
     except Exception as e:
         st.error(f"Error displaying file: {e}")
 
@@ -172,39 +172,14 @@ def set_custom_style():
         body {
             color: #333;
             background-color: #f0f0f0;
-            font-family: 'Arial', sans-serif;
         }
-        .stButton>button {
-            background-color: #007bff;
-            color: #fff;
-            border-radius: 5px;
-            padding: 10px;
-            transition: all 0.3s ease;
+        .css-1aumxhk {
+            background-color: #007bff !important;
+            color: #fff !important;
         }
-        .stButton>button:hover {
-            background-color: #0056b3;
-            transform: scale(1.05);
-        }
-        .stTextInput>div>input {
-            border: 1px solid #007bff;
-            border-radius: 5px;
-            padding: 10px;
-        }
-        .stSidebar {
-            background-color: #343a40;
-            color: #fff;
-        }
-        .stSidebar .stButton>button {
-            background-color: #6c757d;
-            color: #fff;
-        }
-        .stSidebar .stButton>button:hover {
-            background-color: #5a6268;
-        }
-        .stSidebar .stTextInput>div>input {
-            border: 1px solid #6c757d;
-            border-radius: 5px;
-            padding: 10px;
+        .st-b7 {
+            background-color: #6c757d !important;
+            color: #fff !important;
         }
         </style>
         """,
@@ -268,7 +243,7 @@ def main():
 
         # File management options
         st.sidebar.subheader("Manage Files")
-        categories = ["Images", "Videos", "Documents", "Audio", "Other"]
+        categories = ["Images", "Videos", "Documents", "Audio"]
         selected_category = st.sidebar.selectbox("Select Category", categories)
 
         uploaded_files = list_uploaded_files(st.session_state['username'], selected_category)
@@ -343,19 +318,17 @@ def main():
 
 # Function to get allowed file types for each category
 def get_allowed_file_types(category):
-    # Allow all common file types
     file_types = {
-        "Images": ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "svg"],
-        "Videos": ["mp4", "mov", "avi", "mkv", "flv", "wmv", "webm"],
-        "Documents": ["pdf", "doc", "docx", "txt", "rtf", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "odp", "html", "css", "js", "json", "xml", "md", "csv"],
-        "Audio": ["mp3", "wav", "ogg", "flac", "aac", "m4a"],
-        "Other": ["zip", "rar", "7z", "tar", "gz", "bz2", "py", "ipynb", "c", "cpp", "java", "class", "jar", "cs", "rb", "go", "pl", "sh", "bat", "ps1"]
+        "Images": ["jpg", "jpeg", "png", "gif"],
+        "Videos": ["mp4", "mov", "avi"],
+        "Documents": ["pdf", "doc", "docx", "txt", "xlsx", "xlsv", "csv", "ppt"],
+        "Audio": ["mp3", "wav", "ogg"]
     }
-    return file_types.get(category, ["*"])
+    return file_types.get(category, [])
 
 # Function to create necessary directories on startup
 def create_directories():
-    categories = ["Images", "Videos", "Documents", "Audio", "Other"]
+    categories = ["Images", "Videos", "Documents", "Audio"]
     for category in categories:
         upload_dir = Path("uploads") / category
         upload_dir.mkdir(parents=True, exist_ok=True)
