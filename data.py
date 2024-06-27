@@ -1,37 +1,10 @@
 import streamlit as st
 from pathlib import Path
 import os
-import base64
-from cryptography.fernet import Fernet
 import hashlib
 
 # File to store user credentials
 USERS_FILE = "users.txt"
-KEY_FILE = "secret.key"
-
-# Generate a key for encryption and decryption
-def generate_key():
-    key = Fernet.generate_key()
-    with open(KEY_FILE, "wb") as key_file:
-        key_file.write(key)
-
-# Load the key from the current directory
-def load_key():
-    return open(KEY_FILE, "rb").read()
-
-# Encrypt a message
-def encrypt_message(message):
-    key = load_key()
-    f = Fernet(key)
-    encrypted_message = f.encrypt(message.encode())
-    return encrypted_message
-
-# Decrypt a message
-def decrypt_message(encrypted_message):
-    key = load_key()
-    f = Fernet(key)
-    decrypted_message = f.decrypt(encrypted_message).decode()
-    return decrypted_message
 
 # Hash a password
 def hash_password(password):
@@ -86,18 +59,12 @@ def logout_user():
 # Function to handle file uploads
 def save_uploaded_file(uploaded_file, username, category):
     try:
-        # Encrypt the file before saving
-        key = load_key()
-        f = Fernet(key)
-        file_data = uploaded_file.getvalue()
-        encrypted_data = f.encrypt(file_data)
-        
-        # Save the encrypted file to a specific directory
+        # Save the file to a specific directory
         upload_dir = Path("uploads") / username / category
         upload_dir.mkdir(parents=True, exist_ok=True)
         file_path = upload_dir / uploaded_file.name
         with open(file_path, "wb") as f:
-            f.write(encrypted_data)
+            f.write(uploaded_file.getbuffer())
         return file_path
     except Exception as e:
         st.error(f"Error saving file: {e}")
@@ -113,12 +80,9 @@ def list_uploaded_files(username, category):
 
 # Function to display uploaded files
 def display_uploaded_file(file_path):
-    key = load_key()
-    f = Fernet(key)
     try:
         with open(file_path, "rb") as file:
-            encrypted_data = file.read()
-        file_data = f.decrypt(encrypted_data)
+            file_data = file.read()
 
         file_extension = file_path.suffix.lower()
         if file_extension in ['.jpg', '.jpeg', '.png', '.gif']:
@@ -132,7 +96,7 @@ def display_uploaded_file(file_path):
             pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="1000" type="application/pdf"></iframe>'
             st.markdown(pdf_display, unsafe_allow_html=True)
         else:
-            st.write(f"File: {file_path.name}")
+            st.text_area(f"File: {file_path.name}", file_data.decode())
     except Exception as e:
         st.error(f"Error displaying file: {e}")
 
@@ -147,12 +111,9 @@ def delete_file(file_path):
 # Function to share a file
 def share_file(file_path):
     try:
-        key = load_key()
-        f = Fernet(key)
         with open(file_path, "rb") as file:
-            encrypted_data = file.read()
-        file_data = f.decrypt(encrypted_data)
-        
+            file_data = file.read()
+
         # Creating a download link for sharing
         b64 = base64.b64encode(file_data).decode('utf-8')
         href = f'<a href="data:file/{file_path.suffix[1:]};base64,{b64}" download="{file_path.name}">Download {file_path.name}</a>'
@@ -172,14 +133,39 @@ def set_custom_style():
         body {
             color: #333;
             background-color: #f0f0f0;
+            font-family: 'Arial', sans-serif;
         }
-        .css-1aumxhk {
-            background-color: #007bff !important;
-            color: #fff !important;
+        .stButton>button {
+            background-color: #007bff;
+            color: #fff;
+            border-radius: 5px;
+            padding: 10px;
+            transition: all 0.3s ease;
         }
-        .st-b7 {
-            background-color: #6c757d !important;
-            color: #fff !important;
+        .stButton>button:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+        .stTextInput>div>input {
+            border: 1px solid #007bff;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        .stSidebar {
+            background-color: #343a40;
+            color: #fff;
+        }
+        .stSidebar .stButton>button {
+            background-color: #6c757d;
+            color: #fff;
+        }
+        .stSidebar .stButton>button:hover {
+            background-color: #5a6268;
+        }
+        .stSidebar .stTextInput>div>input {
+            border: 1px solid #6c757d;
+            border-radius: 5px;
+            padding: 10px;
         }
         </style>
         """,
@@ -199,10 +185,6 @@ def main():
         st.session_state['selected_file'] = None
     if 'search_query' not in st.session_state:
         st.session_state['search_query'] = ""
-
-    # Generate encryption key if it doesn't exist
-    if not Path(KEY_FILE).exists():
-        generate_key()
 
     # Apply custom styles
     set_custom_style()
@@ -243,7 +225,7 @@ def main():
 
         # File management options
         st.sidebar.subheader("Manage Files")
-        categories = ["Images", "Videos", "Documents", "Audio"]
+        categories = ["Images", "Videos", "Documents", "Audio", "Other"]
         selected_category = st.sidebar.selectbox("Select Category", categories)
 
         uploaded_files = list_uploaded_files(st.session_state['username'], selected_category)
@@ -318,20 +300,15 @@ def main():
 
 # Function to get allowed file types for each category
 def get_allowed_file_types(category):
+    # Allow all common file types
     file_types = {
-        "Images": ["jpg", "jpeg", "png", "gif"],
-        "Videos": ["mp4", "mov", "avi"],
-        "Documents": ["pdf", "doc", "docx", "txt", "xlsx", "xlsv", "csv", "ppt"],
-        "Audio": ["mp3", "wav", "ogg"]
+        "Images": ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "svg"],
+        "Videos": ["mp4", "mov", "avi", "mkv", "flv", "wmv", "webm"],
+        "Documents": ["pdf", "doc", "docx", "txt", "rtf", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "odp", "html", "css", "js", "json", "xml", "md", "csv"],
+        "Audio": ["mp3", "wav", "ogg", "flac", "aac", "m4a"],
+        "Other": ["zip", "rar", "7z", "tar", "gz", "bz2", "py", "ipynb", "c", "cpp", "java", "class", "jar", "cs", "rb", "go", "pl", "sh", "bat", "ps1"]
     }
-    return file_types.get(category, [])
-
-# Function to create necessary directories on startup
-def create_directories():
-    categories = ["Images", "Videos", "Documents", "Audio"]
-    for category in categories:
-        upload_dir = Path("uploads") / category
-        upload_dir.mkdir(parents=True, exist_ok=True)
+    return file_types.get(category, ["*"])
 
 if __name__ == "__main__":
     main()
