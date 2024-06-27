@@ -57,7 +57,7 @@ def save_user_data(users):
 def register_user(username, password):
     users = load_user_data()
     if username in users:
-        st.error("Username already exists. Please choose a different username.")
+        st.error("Username already exists buddy.Try something else.")
     else:
         hashed_password = hash_password(password)
         users[username] = hashed_password
@@ -232,7 +232,7 @@ def main():
     # Apply custom styles
     set_custom_style()
 
-    st.title("Media Storage App")
+    st.title("Private Data Storage App")
 
     if not st.session_state['logged_in']:
         # User choice: Register or Login
@@ -257,7 +257,7 @@ def main():
                     if login_user(username_input, password_input):
                         st.success(f"Logged in as {username_input}")
                     else:
-                        st.error("Invalid username or password")
+                        st.error("Invalid username or password bro")
     else:
         st.success(f"Welcome {st.session_state['username']}")
 
@@ -267,7 +267,7 @@ def main():
         st.sidebar.title("File Manager")
 
         # File management options
-        st.sidebar.subheader("Manage Files")
+        st.sidebar.subheader("Manage Your Files")
         categories = ["Images", "Videos", "Documents", "Audio", "Other"]
         selected_category = st.sidebar.selectbox("Select Category", categories)
 
